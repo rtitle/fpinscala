@@ -123,8 +123,37 @@ object List { // `List` companion object. Contains functions for creating and wo
   def add1(l: List[Int]) = foldRight(l, Nil: List[Int])((a,b) => Cons(a+1, b))
 
   // 3.17
-
-  //... 
+  def dtostr(l: List[Double]): List[String] = foldRight(l, Nil: List[String])((a,b) => Cons(a.toString, b))
  
-  def map[A,B](l: List[A])(f: A => B): List[B] = sys.error("todo")
+  // 3.18 
+  def map[A,B](l: List[A])(f: A => B): List[B] = foldRight(l, Nil: List[B])((a,b) => Cons(f(a), b))
+
+  // 3.19
+  def filter[A](l: List[A])(f: A => Boolean): List[A] = foldRight(l, Nil: List[A])((a,b) => if (f(a)) Cons(a,b) else b)
+
+  // 3.20
+  def flatMap[A, B](l: List[A])(f: A => List[B]): List[B] = concat(map(l)(f))
+
+  // 3.21 
+  def filter2[A](l: List[A])(f: A => Boolean): List[A] = flatMap(l)(a => if (f(a)) List(a) else Nil)
+
+  // 3.22
+  def zipAdd(a1: List[Int], a2: List[Int]): List[Int] = (a1, a2) match {
+    case (Cons(x,xs), Cons(y,ys)) => Cons(x+y, zipAdd(xs, ys))
+    case _ => Nil
+  }
+
+  // 3.23
+  def zipWith[A,B,C](a1: List[A], a2: List[B])(f: (A,B) => C): List[C] = (a1,a2) match {
+    case (Cons(x,xs), Cons(y,ys)) => Cons(f(x,y), zipWith(xs, ys)(f))
+    case _ => Nil
+  }
+ 
+  // 3.24
+  @annotation.tailrec
+  def hasSubsequence[A](sup: List[A], sub: List[A]): Boolean = sup match {
+    case Nil => false
+    case Cons(x,xs) => if (foldLeft(zipWith(sup,sub)(_==_), true)(_&&_)) true else hasSubsequence(xs, sub)
+  }
+
 }
