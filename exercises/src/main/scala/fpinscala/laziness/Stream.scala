@@ -17,14 +17,46 @@ trait Stream[+A] {
     case Empty => None
     case Cons(h, t) => if (f(h())) Some(h()) else t().find(f)
   }
-  def take(n: Int): Stream[A] = sys.error("todo")
+  
+  // 5.1
+  def toList: List[A] = this match {
+    case Cons(h,t) => h() :: t().toList
+    case Empty => Nil
+  }
 
-  def drop(n: Int): Stream[A] = sys.error("todo")
+  // 5.2
+  def take(n: Int): Stream[A] = this match {
+    case Cons(h,t) if n > 0 => cons(h(), t().take(n-1))
+    case _ => Empty
+  } 
 
-  def takeWhile(p: A => Boolean): Stream[A] = sys.error("todo")
+  def drop(n: Int): Stream[A] = this match {
+    case Cons(h,t) if n > 0 => t().drop(n-1)
+    case otherwise@_ => otherwise
+  }
 
-  def forAll(p: A => Boolean): Boolean = sys.error("todo")
+  // 5.3
+  def takeWhile(p: A => Boolean): Stream[A] = this match {
+    case Cons(h,t) if p(h()) => cons(h(), t().takeWhile(p))
+    case _ => Empty
+  }
 
+  // 5.4
+  def forAll(p: A => Boolean): Boolean = foldRight(true)((a,b) => p(a) && b)
+
+  // 5.5
+  def takeWhile2(p: A => Boolean): Stream[A] = foldRight(empty[A])((a,b) => if (p(a)) cons(a, b) else Empty)
+
+  // 5.6
+  def headOption: Option[A] = foldRight[Option[A]](None)((a,b) => Some(a))  // recursion doesn't continue because b isn't evaluated
+
+  // 5.7
+  def map[B](f: A => B): Stream[B] = foldRight(empty[B])((a,b) => cons(f(a), b))
+  def filter(p: A => Boolean): Stream[A] = foldRight(empty[A])((a,b) => if (p(a)) cons(a,b) else b)
+  def append[B >: A](s2: => Stream[B]): Stream[B] = foldRight(s2)((a,b) => cons(a,b))
+  def flatMap[B](f: A => Stream[B]): Stream[B] = foldRight(empty[B])((a,b) => f(a).append(b))
+
+  // this wasn't in the book but I'll implement it anyway
   def startsWith[B](s: Stream[B]): Boolean = sys.error("todo")
 }
 case object Empty extends Stream[Nothing]
