@@ -57,7 +57,11 @@ trait Stream[+A] {
   def flatMap[B](f: A => Stream[B]): Stream[B] = foldRight(empty[B])((a,b) => f(a).append(b))
 
   // this wasn't in the book but I'll implement it anyway
-  def startsWith[B](s: Stream[B]): Boolean = sys.error("todo")
+  def startsWith[B](s: Stream[B]): Boolean = (this, s) match {
+    case (Cons(x,xs), Cons(y,ys)) => if (x() == y()) xs().startsWith(ys()) else false
+    case (_, Empty) => true
+    case _ => false
+  }
 }
 case object Empty extends Stream[Nothing]
 case class Cons[+A](h: () => A, t: () => Stream[A]) extends Stream[A]
@@ -76,7 +80,18 @@ object Stream {
     else cons(as.head, apply(as.tail: _*))
 
   val ones: Stream[Int] = Stream.cons(1, ones)
-  def from(n: Int): Stream[Int] = sys.error("todo")
+
+  // 5.8
+  def constant[A](a: A): Stream[A] = cons(a, constant(a))
+
+  // 5.9
+  def from(n: Int): Stream[Int] = cons(n, from(n+1))
+
+  // 5.10 
+  def fibs: Stream[Int] = {
+    def inner(cur: Int, prev: Int): Stream[Int] = cons(prev, inner(prev+cur, cur))
+    inner(1, 0)
+  }
 
   def unfold[A, S](z: S)(f: S => Option[(A, S)]): Stream[A] = sys.error("todo")
 }
