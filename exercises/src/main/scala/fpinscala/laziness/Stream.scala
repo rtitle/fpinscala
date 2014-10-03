@@ -62,6 +62,31 @@ trait Stream[+A] {
     case (_, Empty) => true
     case _ => false
   }
+
+  // 5.13
+  def map2[B](f: A => B): Stream[B] = unfold(this) {
+    case Cons(h,t) => Some(f(h()), t())
+    case _ => None
+  }
+  def take2(n: Int): Stream[A] = unfold(n,this) {
+    case (nn, Cons(h,t)) if nn > 0 => Some(h(), (nn-1, t()))
+    case _ => None
+  }
+  def takeWhile3(p: A => Boolean): Stream[A] = unfold(this) {
+    case Cons(h,t) if p(h()) => Some(h(), t())
+    case _ => None
+  }
+  def zipWith[B,C](s2: Stream[B])(f: (A,B) => C): Stream[C] = unfold(this,s2) {
+    case (Cons(h1,t1), Cons(h2,t2)) => Some(f(h1(), h2()), (t1(), t2()))
+    case _ => None
+  }
+  def zipAll[B](s2: Stream[B]): Stream[(Option[A],Option[B])] = unfold(this,s2) {
+    case (Cons(h1,t1), Cons(h2,t2)) => Some((Some(h1()), Some(h2())), (t1(), t2()))
+    case (Cons(h1,t1), Empty) => Some((Some(h1()), None), (t1(), empty))
+    case (Empty, Cons(h2,t2)) => Some((None, Some(h2())), (empty, t2()))
+    case _ => None
+  }
+
 }
 case object Empty extends Stream[Nothing]
 case class Cons[+A](h: () => A, t: () => Stream[A]) extends Stream[A]
@@ -93,5 +118,16 @@ object Stream {
     inner(1, 0)
   }
 
-  def unfold[A, S](z: S)(f: S => Option[(A, S)]): Stream[A] = sys.error("todo")
+  // 5.11
+  def unfold[A, S](z: S)(f: S => Option[(A, S)]): Stream[A] = f(z) match {
+    case Some((a,s)) => cons(a, unfold(s)(f(_)))
+    case None => empty
+  }
+
+  // 5.12
+  def ones2: Stream[Int] = unfold(1)(Some(1, _))
+  def constant2[A](a: A): Stream[A] = unfold(a)(Some(a, _))
+  def from2(n: Int): Stream[Int] = unfold(n)(s => Some(s, s+1))
+  def fibs2: Stream[Int] = unfold(1,0)(s => Some(s._2, (s._1+s._2, s._1)))
+
 }
